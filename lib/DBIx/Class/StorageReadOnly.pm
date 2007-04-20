@@ -4,24 +4,48 @@ use warnings;
 use base 'DBIx::Class';
 use Carp::Clan qw/^DBIx::Class/;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
+use DBIx::Class::Storage::DBI;
 
+package DBIx::Class::Storage::DBI;
+no warnings 'redefine';
 sub insert {
-    my $self = shift;
-
-    if ($self->result_source->schema->{__READ_ONLY_CONNECTION}) {
+    my ($self, $ident, $to_insert) = @_;
+    if ($self->_search_readonly_info) {
         croak("This connection is read only. Can't insert.");
     }
-    $self->next::method(@_);
+    $self->throw_exception(
+        "Couldn't insert ".join(', ',
+        map "$_ => $to_insert->{$_}", keys %$to_insert
+        )." into ${ident}"
+    ) unless ($self->_execute('insert' => [], $ident, $to_insert));
+    return $to_insert;
 }
 
 sub update {
     my $self = shift;
-
-    if ($self->result_source->schema->{__READ_ONLY_CONNECTION}) {
+    if ($self->_search_readonly_info) {
         croak("This connection is read only. Can't update.");
     }
-    $self->next::method(@_);
+    return $self->_execute('update' => [], @_);
+}
+
+sub delete {
+    my $self = shift;
+    if ($self->_search_readonly_info) {
+        croak("This connection is read only. Can't delete.");
+    }
+    return $self->_execute('delete' => [], @_);
+}
+
+sub _search_readonly_info {
+    my $self = shift;
+    for my $info ( @{$self->connect_info} ) {
+        if (ref $info eq 'HASH' ) {
+            return 1 if $info->{read_only} == 1;
+        }
+    }
+    return;
 }
 
 1;
@@ -29,7 +53,7 @@ __END__
 
 =head1 NAME
 
-DBIx::Class::StorageReadOnly - Can't insert and update for DBIC
+DBIx::Class::StorageReadOnly - Can't insert and update and delete for DBIC
 
 =head1 SYNOPSIS
 
@@ -39,10 +63,14 @@ DBIx::Class::StorageReadOnly - Can't insert and update for DBIC
         Core
     /);
     
-    # create connection
+    # create connection and set readonly info
+    @connection_info = (
+        'dbi:mysql:test',
+        'foo',
+        'bar',
+        {read_only => 1},
+    );
     my $schema = $schema_class->connect(@connection_info);
-    # set read only flag.
-    $schema->{__READ_ONLY_CONNECTION} = 1;
     
     my $user = $schema->resultset('User')->search({name => 'nomaneko'});
     $user->update({name => 'gikoneko'}); # die. Can't update.
@@ -55,11 +83,11 @@ If you try to write it in read only DB, the exception is generated.
 
 =head2 insert
 
-set hook point.
-
 =head2 update 
 
-set hook point.
+=head2 delete 
+
+=head2 _search_readonly_info
 
 =head1 BUGS AND LIMITATIONS
 

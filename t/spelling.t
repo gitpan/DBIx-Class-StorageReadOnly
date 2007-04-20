@@ -10,6 +10,8 @@ my @stopwords = split /\n/, <<'EOF';
 Atsushi
 Kobayashi
 DBIC
+Yappo
+san
 EOF
 
 add_stopwords(@stopwords);
