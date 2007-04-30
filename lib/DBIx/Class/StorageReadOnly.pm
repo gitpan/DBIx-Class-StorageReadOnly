@@ -4,50 +4,34 @@ use warnings;
 use base 'DBIx::Class';
 use Carp::Clan qw/^DBIx::Class/;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 use DBIx::Class::Storage::DBI;
 
-package DBIx::Class::Storage::DBI;
-no warnings 'redefine';
-sub insert {
-    my ($self, $ident, $to_insert) = @_;
-    if ($self->_search_readonly_info) {
-        croak("This connection is read only. Can't insert.");
+{
+    package DBIx::Class::Storage::DBI;
+    no warnings 'redefine';
+    no strict 'refs';
+    for my $method (qw/insert update delete/) {
+        my $code_org = DBIx::Class::Storage::DBI->can($method);
+        *{"DBIx\::Class\::Storage\::DBI\::$method"} = sub {
+            my $self = shift;
+            if ($self->_search_readonly_info) {
+                croak("This connection is read only. Can't $method.");
+            }
+            return $self->$code_org(@_);
+        };
     }
-    $self->throw_exception(
-        "Couldn't insert ".join(', ',
-        map "$_ => $to_insert->{$_}", keys %$to_insert
-        )." into ${ident}"
-    ) unless ($self->_execute('insert' => [], $ident, $to_insert));
-    return $to_insert;
-}
 
-sub update {
-    my $self = shift;
-    if ($self->_search_readonly_info) {
-        croak("This connection is read only. Can't update.");
-    }
-    return $self->_execute('update' => [], @_);
-}
-
-sub delete {
-    my $self = shift;
-    if ($self->_search_readonly_info) {
-        croak("This connection is read only. Can't delete.");
-    }
-    return $self->_execute('delete' => [], @_);
-}
-
-sub _search_readonly_info {
-    my $self = shift;
-    for my $info ( @{$self->connect_info} ) {
-        if (ref $info eq 'HASH' ) {
-            return 1 if $info->{read_only} == 1;
+    sub _search_readonly_info {
+        my $self = shift;
+        for my $info ( @{$self->connect_info} ) {
+            if (ref $info eq 'HASH' ) {
+                return 1 if $info->{read_only} == 1;
+            }
         }
+        return;
     }
-    return;
 }
-
 1;
 __END__
 

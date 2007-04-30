@@ -1,50 +1,40 @@
-package DBIx::Class::StorageReadOnly::TT;
+package DBIx::Class::StorageReadOnly;
 use strict;
 use warnings;
 use base 'DBIx::Class';
 use Carp::Clan qw/^DBIx::Class/;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 use DBIx::Class::Storage::DBI;
-
-package DBIx::Class::Storage::DBI;
-use tt (subs => [qw/insert update delete/]);
-[% FOR sub IN subs %]
-    [% IF sub == 'insert' %]
-        sub [% sub %] {
-            my ($self, $ident, $to_insert) = @_;
-            if ($self->_search_readonly_info) {
-                croak("This connection is read only. Can't [% sub %].");
-            }
-            $self->throw_exception(
-                "Couldn't insert ".join(', ',
-                map "$_ => $to_insert->{$_}", keys %$to_insert
-                )." into ${ident}"
-            ) unless ($self->_execute([% sub %] => [], $ident, $to_insert));
-            return $to_insert;
-        }
-    [% ELSE %]
-        sub [% sub %] {
+{
+    package DBIx::Class::Storage::DBI;
+    use tt (subs => [qw/insert update delete/]);
+    [% FOR sub IN subs %]
+    {
+        no warnings 'redefine';
+        no strict 'refs';
+        my $[%- sub -%]_code_org = DBIx::Class::Storage::DBI->can('[%- sub -%]');
+        *{"DBIx\::Class\::Storage\::DBI\::[%- sub -%]"} = sub {
             my $self = shift;
             if ($self->_search_readonly_info) {
-                croak("This connection is read only. Can't [% sub %].");
+                croak("This connection is read only. Can't [%- sub -%].");
             }
-            return $self->_execute([% sub %] => [], @_);
-        }
-    [% END %]
-[% END %]
-no tt;
-
-sub _search_readonly_info {
-    my $self = shift;
-    for my $info ( @{$self->connect_info} ) {
-        if (ref $info eq 'HASH' ) {
-            return 1 if $info->{read_only} == 1;
-        }
+            return $self->$[%- sub -%]_code_org(@_);
+        };
     }
-    return;
-}
+    [% END %]
+    no tt;
 
+    sub _search_readonly_info {
+        my $self = shift;
+        for my $info ( @{$self->connect_info} ) {
+            if (ref $info eq 'HASH' ) {
+                return 1 if $info->{read_only} == 1;
+            }
+        }
+        return;
+    }
+}
 1;
 __END__
 
