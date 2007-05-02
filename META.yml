@@ -11,4 +11,4 @@ no_index:
 requires: 
   Carp::Clan: 0
   DBIx::Class: 0
-version: 0.03
+version: 0.04

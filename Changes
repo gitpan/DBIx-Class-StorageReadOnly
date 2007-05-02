@@ -1,5 +1,8 @@
 Revision history for DBIx-Class-StorageReadOnly
 
+0.0.4 2007-05-02
+       CHG: orz...TT.pm and hide from PAUSE.
+       
 0.0.3 2007-04-30
        CHG: use original insert update delete code.
 

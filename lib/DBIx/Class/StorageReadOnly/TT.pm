@@ -1,10 +1,11 @@
-package DBIx::Class::StorageReadOnly;
+package # hide from PAUSE
+    DBIx::Class::StorageReadOnly::TT;
 use strict;
 use warnings;
 use base 'DBIx::Class';
 use Carp::Clan qw/^DBIx::Class/;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 use DBIx::Class::Storage::DBI;
 {
     package DBIx::Class::Storage::DBI;
