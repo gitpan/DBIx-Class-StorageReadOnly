@@ -5,7 +5,7 @@ use warnings;
 use base 'DBIx::Class';
 use Carp::Clan qw/^DBIx::Class/;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 use DBIx::Class::Storage::DBI;
 {
     package DBIx::Class::Storage::DBI;
@@ -13,7 +13,7 @@ use DBIx::Class::Storage::DBI;
     [% FOR sub IN subs %]
     {
         no warnings 'redefine';
-        no strict 'refs';
+        no strict 'refs'; ## no critic
         my $[%- sub -%]_code_org = DBIx::Class::Storage::DBI->can('[%- sub -%]');
         *{"DBIx\::Class\::Storage\::DBI\::[%- sub -%]"} = sub {
             my $self = shift;

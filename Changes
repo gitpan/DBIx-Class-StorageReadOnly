@@ -1,5 +1,8 @@
 Revision history for DBIx-Class-StorageReadOnly
 
+0.0.5 2007-05-14
+       FIX: ## no critic thanks to yappo-san.
+
 0.0.4 2007-05-02
        CHG: orz...TT.pm and hide from PAUSE.
        

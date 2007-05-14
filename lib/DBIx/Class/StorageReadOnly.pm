@@ -4,13 +4,13 @@ use warnings;
 use base 'DBIx::Class';
 use Carp::Clan qw/^DBIx::Class/;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 use DBIx::Class::Storage::DBI;
 
 {
     package DBIx::Class::Storage::DBI;
     no warnings 'redefine';
-    no strict 'refs';
+    no strict 'refs'; ## no critic
     for my $method (qw/insert update delete/) {
         my $code_org = DBIx::Class::Storage::DBI->can($method);
         *{"DBIx\::Class\::Storage\::DBI\::$method"} = sub {
